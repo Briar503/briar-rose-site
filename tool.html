@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRC Assessment Questionnaire</title>
+  <!-- Google Fonts: Inter and Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+    rel="stylesheet">
+  <!-- Tailwind CSS (Local Build) -->
+  <link href="./styles.css" rel="stylesheet">
+  <!-- Dexie.js CDN -->
+  <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+  <script>
+    // Avoids "flash of unstyled content" by applying the theme before the body renders.
+    if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  </script>
+  <style>
+    body {
+      transition: background-color 0.4s ease, color 0.4s ease;
+    }
+
+    /* Glass Panel Aesthetic */
+    .glass-panel {
+      background-color: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .dark .glass-panel {
+      background-color: rgba(28, 25, 23, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Typography Overrides for Headers */
+    h1,
+    h2,
+    h3 {
+      font-family: 'Playfair Display', serif;
+    }
+
+    .notes-textarea {
+      resize: vertical;
+    }
+
+    .maturity-btn-selected {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(225, 29, 72, 0.3);
+      /* Rose glow */
+    }
+
+    #import-assessment-input {
+      display: none;
+    }
+
+    .heatmap-cell:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .dark .heatmap-cell:hover {
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    }
+
+    #heatmap-modal,
+    #framework-change-modal {
+      transition: opacity 0.3s ease;
+    }
+
+    /* Custom Toggle Switch Styles */
+    .gap-toggle-label .dot {
+      transition: transform .2s ease-in-out;
+    }
+
+    .gap-toggle-input:checked~.dot {
+      transform: translateX(1.5rem);
+    }
+
+    .gap-toggle-input:checked~.bg {
+      background-color: #e11d48;
+      /* rose-600 */
+    }
+
+    .dark .gap-toggle-input:checked~.bg {
+      background-color: #be123c;
+      /* rose-700 */
+    }
+
+    /* Auto-save Toast Animation */
+    #save-indicator {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .translate-y-20 {
+      transform: translateY(5rem);
+    }
+
+    .opacity-0 {
+      opacity: 0;
+    }
+
+    @media print {
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      body *,
+      #sidebar-nav,
+      #save-indicator {
+        visibility: hidden;
+      }
+
+      #full-report-panel,
+      #full-report-panel * {
+        visibility: visible;
+      }
+
+      #full-report-panel {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 1rem;
+        font-size: 12px;
+      }
+
+      .print-force-light {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+      }
+
+      .print-force-light * {
+        border-color: #e5e7eb !important;
+      }
+
+      .print-no-break {
+        page-break-inside: avoid;
+      }
+
+      .print-break-before {
+        page-break-before: always;
+      }
+
+      .no-print {
+        display: none !important;
+      }
+
+      #full-report-panel #heatmap-container {
+        transform: scale(1.0) !important;
+        width: 100% !important;
+        overflow: visible !important;
+      }
+
+      #full-report-panel #heatmap-container table {
+        width: 100%;
+        font-size: 9px;
+      }
+
+      #full-report-panel #heatmap-container td,
+      #full-report-panel #heatmap-container th {
+        padding: 2px;
+      }
+    }
+  </style>
+</head>
+
+<body
+  class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-200 font-sans antialiased bg-gradient-to-br from-rose-50 via-white to-orange-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+
+  <!-- Sidebar Navigation -->
+  <nav id="sidebar-nav"
+    class="glass-panel fixed top-0 left-0 h-full w-64 shadow-lg z-20 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out no-print">
+    <div class="flex items-center justify-center p-6 border-b border-slate-200 dark:border-slate-700">
+      <!-- Replaced logo placeholder with consistent text styling -->
+      <span class="font-bold text-xl text-rose-900 dark:text-rose-100 font-serif tracking-wide">BRIAR.</span>
+    </div>
+    <ul id="tabs-container" class="p-4 space-y-2">
+      <!-- Tabs will be dynamically inserted here -->
+    </ul>
+
+    <!-- Navigation Back Link -->
+    <div class="absolute bottom-0 w-full p-4 border-t border-slate-200 dark:border-slate-700">
+      <a href="index.html"
+        class="flex items-center text-sm font-medium text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 transition-colors duration-200">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Back to Portfolio
+      </a>
+    </div>
+  </nav>
+
+  <div id="main-content" class="md:pl-64 transition-all duration-300 ease-in-out">
+    <div class="container mx-auto max-w-5xl p-4 sm:p-8 relative">
+
+      <!-- Mobile Menu and Theme Toggle Container -->
+      <div class="absolute top-4 right-4 sm:top-8 sm:right-8 flex items-center space-x-2 no-print">
+        <!-- Mobile Hamburger Menu Button -->
+        <button id="mobile-menu-button"
+          class="md:hidden text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-300 dark:focus:ring-slate-600 rounded-lg text-sm p-2.5">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
+          </svg>
+        </button>
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" type="button"
+          class="text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-300 dark:focus:ring-slate-600 rounded-lg text-sm p-2.5">
+          <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"
+            xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+          </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" id="theme-toggle-light-icon" class="hidden w-5 h-5" width="20"
+            height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 12m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" />
+            <path d="M3 12h1m8 -9v1m8 8h1m-9 8v1m-6.4 -15.4l.7 .7m12.1 -.7l-.7 .7m0 11.4l.7 .7m-12.1 -.7l-.7 .7" />
+          </svg>
+        </button>
+      </div>
+
+
+      <!-- Header -->
+      <header class="mb-10 text-center pt-8 sm:pt-0 border-b border-slate-200 dark:border-slate-800 pb-8">
+        <h1 class="text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white mt-12 sm:mt-0 tracking-tight">GRC
+          Assessment Questionnaire</h1>
+      </header>
+
+      <!-- Dynamic Summary Dashboard -->
+      <section id="dashboard" class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+        <div class="glass-panel p-6 rounded-xl shadow-md text-center">
+          <h2 class="text-sm uppercase tracking-widest font-semibold text-slate-500 dark:text-slate-400">Total Controls
+          </h2>
+          <p id="total-questions" class="text-4xl font-serif font-bold text-slate-900 dark:text-white mt-2">0</p>
+        </div>
+        <div class="glass-panel p-6 rounded-xl shadow-md text-center">
+          <h2 class="text-sm uppercase tracking-widest font-semibold text-slate-500 dark:text-slate-400">Implemented
+          </h2>
+          <p id="implemented-controls" class="text-4xl font-serif font-bold text-purple-500 dark:text-purple-400 mt-2">0
+          </p>
+        </div>
+        <div class="glass-panel p-6 rounded-xl shadow-md text-center">
+          <h2 class="text-sm uppercase tracking-widest font-semibold text-slate-500 dark:text-slate-400">Gaps</h2>
+          <p id="identified-gaps" class="text-4xl font-serif font-bold text-rose-600 dark:text-rose-500 mt-2">0</p>
+        </div>
+      </section>
+
+
+      <!-- Tab Content Panels -->
+      <div id="tab-content">
+        <div id="assessment-info-panel" class="hidden">
+          <div class="glass-panel p-8 rounded-xl shadow-md">
+            <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-8 border-b border-slate-200 pb-4">Assessment
+              Details</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div><label for="assessment-name"
+                  class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Assessment
+                  Name</label><input type="text" id="assessment-name" data-field="assessmentName"
+                  class="metadata-input w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-200 p-3 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+              </div>
+              <div><label for="assessed-by"
+                  class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Assessed By</label><input
+                  type="text" id="assessed-by" data-field="assessedBy"
+                  class="metadata-input w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-200 p-3 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+              </div>
+              <div><label for="assessment-date"
+                  class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Assessment
+                  Date</label><input type="date" id="assessment-date" data-field="assessmentDate"
+                  class="metadata-input w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-200 p-3 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500"
+                  style="color-scheme: dark;"></div>
+              <div><label for="framework-select"
+                  class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Assessment
+                  Framework</label><select id="framework-select"
+                  class="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-200 p-3 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500"></select>
+              </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+              <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6">Data Management</h2>
+              <div class="flex flex-wrap gap-4"><button id="export-assessment-btn"
+                  class="bg-rose-900 hover:bg-rose-800 text-white font-bold py-2.5 px-6 rounded-lg transition-colors duration-200 shadow-md">Save
+                  Assessment File</button><label for="import-assessment-input"
+                  class="bg-slate-600 hover:bg-slate-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors duration-200 cursor-pointer shadow-md">Load
+                  Assessment File</label><input type="file" id="import-assessment-input" accept=".json"><button
+                  id="clear-assessment-btn"
+                  class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 px-6 rounded-lg transition-colors duration-200 shadow-md ml-auto">Start
+                  New Assessment</button></div>
+            </div>
+          </div>
+        </div>
+        <div id="maturity-panel" class="hidden glass-panel p-6 rounded-xl shadow-md">
+          <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-8">Control Maturity by Family</h2>
+          <div id="maturity-chart-container" class="space-y-6"></div>
+        </div>
+        <div id="heatmap-panel" class="hidden glass-panel p-6 rounded-xl shadow-md">
+          <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Risk Heat Map</h2>
+          <p class="text-slate-500 dark:text-slate-400 mb-6 italic">Based on identified gaps. Click a cell to view
+            details.</p>
+          <div id="heatmap-container" class="overflow-x-auto"></div>
+        </div>
+        <div id="questionnaire-panel" class="hidden">
+          <!-- Questionnaire Filters -->
+          <div id="questionnaire-filters"
+            class="glass-panel p-5 rounded-xl shadow-md mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end">
+            <div class="col-span-1 sm:col-span-2 md:col-span-3 lg:col-span-1">
+              <label for="q-search" class="block text-xs font-bold uppercase text-slate-500 mb-1">Search</label>
+              <input type="text" id="q-search" placeholder="Search questions..."
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+            </div>
+            <div>
+              <label for="q-family-filter" class="block text-xs font-bold uppercase text-slate-500 mb-1">Family</label>
+              <select id="q-family-filter"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="all">All Families</option>
+              </select>
+            </div>
+            <div>
+              <label for="q-maturity-filter"
+                class="block text-xs font-bold uppercase text-slate-500 mb-1">Maturity</label>
+              <select id="q-maturity-filter"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="all">All Levels</option>
+                <option value="unanswered">Unanswered</option>
+                <option value="0">N/A</option>
+                <option value="1">1: Ad Hoc</option>
+                <option value="2">2: Repeatable</option>
+                <option value="3">3: Defined</option>
+                <option value="4">4: Managed</option>
+                <option value="5">5: Optimized</option>
+              </select>
+            </div>
+            <div>
+              <label for="q-gap-filter" class="block text-xs font-bold uppercase text-slate-500 mb-1">Gap Status</label>
+              <select id="q-gap-filter"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="all">Any</option>
+                <option value="yes">Gap</option>
+                <option value="no">Not a Gap</option>
+              </select>
+            </div>
+            <div>
+              <label for="q-sort" class="block text-xs font-bold uppercase text-slate-500 mb-1">Sort By</label>
+              <select id="q-sort"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="order-asc">Control ID (Asc)</option>
+                <option value="maturity-asc">Maturity (Asc)</option>
+                <option value="maturity-desc">Maturity (Desc)</option>
+              </select>
+            </div>
+          </div>
+          <main id="questionnaire-container"></main>
+        </div>
+        <div id="report-panel" class="hidden">
+          <!-- Gaps Report Filters -->
+          <div id="gaps-report-filters"
+            class="glass-panel p-5 rounded-xl shadow-md mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+            <div>
+              <label for="gaps-family-filter"
+                class="block text-xs font-bold uppercase text-slate-500 mb-1">Family</label>
+              <select id="gaps-family-filter"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="all">All Families</option>
+              </select>
+            </div>
+            <div>
+              <label for="gaps-impact-filter"
+                class="block text-xs font-bold uppercase text-slate-500 mb-1">Impact</label>
+              <select id="gaps-impact-filter"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="all">All Impacts</option>
+                <option value="Critical">Critical</option>
+                <option value="Major">Major</option>
+                <option value="Moderate">Moderate</option>
+                <option value="Minor">Minor</option>
+              </select>
+            </div>
+            <div>
+              <label for="gaps-likelihood-filter"
+                class="block text-xs font-bold uppercase text-slate-500 mb-1">Likelihood</label>
+              <select id="gaps-likelihood-filter"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="all">All Likelihoods</option>
+                <option value="Certain">Certain</option>
+                <option value="Likely">Likely</option>
+                <option value="Possible">Possible</option>
+                <option value="Unlikely">Unlikely</option>
+                <option value="Remote">Remote</option>
+              </select>
+            </div>
+            <div>
+              <label for="gaps-sort" class="block text-xs font-bold uppercase text-slate-500 mb-1">Sort By</label>
+              <select id="gaps-sort"
+                class="mt-1 w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-200 p-2 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+                <option value="order-asc">Control ID (Asc)</option>
+                <option value="impact-desc">Impact (High to Low)</option>
+                <option value="likelihood-desc">Likelihood (High to Low)</option>
+              </select>
+            </div>
+          </div>
+          <div id="gaps-report-container" class="space-y-4"></div>
+        </div>
+        <div id="full-report-panel" class="hidden"></div>
+        <div id="about-panel">
+          <div class="glass-panel p-8 rounded-xl shadow-md">
+            <h2 class="text-3xl font-bold text-slate-900 dark:text-white mb-6">About This GRC Assessment Tool</h2>
+            <div class="space-y-6 text-slate-700 dark:text-slate-300 text-lg">
+              <section>
+                <h3 class="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-2">About Me</h3>
+                <p>My name is Briar Schreiber, and I'm a GRC Professional working in the public sector. I put together
+                  this tool to demonstrate and educate others on the basics of frameworks I work with every day.</p>
+                <p> If you find this useful, feel free to reach out to me: briarrose (AT) mailbox.org. You can also buy
+                  me a <a href="https://ko-fi.com/briarrosepdx"
+                    class="font-medium text-rose-500 hover:underline">coffee</a> if you are feeling generous.</p>
+              </section>
+              <section>
+                <h3 class="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-2">Purpose</h3>
+                <p>This tool is a standalone, browser-based questionnaire designed for Governance, Risk, and Compliance
+                  (GRC) professionals to assess an organization's security posture against various frameworks. It
+                  provides a comprehensive platform for data entry, analysis, and reporting without requiring any
+                  server-side infrastructure.</p>
+              </section>
+              <section>
+                <h3 class="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-2">How to Use This Tool</h3>
+                <ol class="list-decimal list-inside space-y-2">
+                  <li><strong>Assessment Tab:</strong> Begin by selecting your desired assessment framework and entering
+                    metadata like the name, assessor, and date.</li>
+                  <li><strong>Questionnaire Tab:</strong> Proceed through each control, assigning a maturity score and
+                    documenting evidence, compensating controls, and remediation plans for any identified gaps.</li>
+                  <li><strong>Analyze Results:</strong> Use the "Control Maturity" and "Risk Heat Map" tabs to visualize
+                    the assessment results and identify high-priority areas.</li>
+                  <li><strong>Review Reports:</strong> The "Gaps Report" tab provides a focused list of all identified
+                    deficiencies, while the "Full Report" tab compiles all information into a single, print-friendly
+                    view.</li>
+                  <li><strong>Data Management:</strong> You can save your entire assessment to a local JSON file at any
+                    time and load it back later to continue your work. All data is saved automatically in your browser
+                    as you work.</li>
+                </ol>
+              </section>
+              <section>
+                <h3 class="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-2">Data Privacy & Storage</h3>
+                <p>All data entered into this tool is stored locally within your web browser's IndexedDB. <strong>No
+                    information is ever transmitted to a server.</strong> This ensures your assessment data remains
+                  private and under your control. You can clear all data at any time by using the "Start New Assessment"
+                  button.</p>
+              </section>
+              <section>
+                <h3 class="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-2">Disclaimer</h3>
+                <p>This tool is intended to be a guide and a data collection aid. It is not a substitute for
+                  professional GRC consultation or a formal audit. The results and reports generated should be reviewed
+                  and validated by qualified personnel.</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Heatmap Modal -->
+  <div id="heatmap-modal"
+    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50 no-print">
+    <div class="glass-panel rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+      <div class="p-4 border-b border-slate-300 dark:border-slate-700 flex justify-between items-center">
+        <h3 id="modal-title" class="text-xl font-bold text-slate-900 dark:text-white">Gaps Details</h3>
+        <button id="modal-close-btn"
+          class="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-3xl leading-none">&times;</button>
+      </div>
+      <div id="modal-content" class="p-6 overflow-y-auto"></div>
+    </div>
+  </div>
+
+  <!-- Framework Change Confirmation Modal -->
+  <div id="framework-change-modal"
+    class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50 no-print">
+    <div class="glass-panel rounded-lg shadow-2xl max-w-md w-full p-6 text-center">
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Change Framework?</h3>
+      <p class="text-slate-600 dark:text-slate-400 mb-6">Switching frameworks will clear all current assessment data.
+        This action cannot be undone. Do you want to proceed?</p>
+      <div class="flex justify-center gap-4">
+        <button id="confirm-framework-change-btn"
+          class="bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-6 rounded-lg transition-colors duration-200">Proceed</button>
+        <button id="cancel-framework-change-btn"
+          class="bg-slate-300 hover:bg-slate-400 dark:bg-slate-600 dark:hover:bg-slate-500 text-slate-800 dark:text-slate-200 font-bold py-2 px-6 rounded-lg transition-colors duration-200">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+
+  <script>
+    // --- DATABASE SETUP ---
+    const db = new Dexie('GRC_Assessment_DB');
+    db.version(2).stores({ questions: 'id', answers: 'questionId', metadata: 'key' });
+
+    // --- GLOBAL STATE ---
+    let viewSettings = {
+      questionnaire: {
+        filters: { searchTerm: '', family: 'all', maturity: 'all', isGap: 'all' },
+        sort: { by: 'order', direction: 'asc' }
+      },
+      gapsReport: {
+        filters: { family: 'all', impact: 'all', likelihood: 'all' },
+        sort: { by: 'order', direction: 'asc' }
+      },
+      fullReport: {
+        gapsSort: { by: 'order', direction: 'asc' },
+        implementedSort: { by: 'order', direction: 'asc' }
+      }
+    };
+    // Caching DB data to avoid frequent reads during filtering/sorting
+    let allQuestionsCache = [];
+    let allAnswersCache = [];
+    let saveIndicatorTimeout;
+
+    // --- FRAMEWORK DEFINITIONS & DYNAMIC LOADING ---
+    const FRAMEWORK_DEFINITIONS = {
+      "nist_csf_2": {
+        name: "NIST CSF 2.0",
+        script: 'nistcsf2questions.js'
+      },
+      "nist_800_171": {
+        name: "NIST SP 800-171",
+        script: 'nist800-171r3-questions.js',
+      },
+      "nist_800_172": {
+        name: "NIST SP 800-172",
+        script: 'nist800-172questions.js'
+      }
+    };
+
+    // Global resolver for our script loading promise
+    let frameworkPromiseResolver;
+
+    // These functions will be called by the external script files to pass their data
+    window.loadNISTCSF2Framework = (data) => {
+      if (frameworkPromiseResolver) frameworkPromiseResolver(data);
+    };
+    window.loadNIST800171Framework = (data) => {
+      if (frameworkPromiseResolver) frameworkPromiseResolver(data);
+    };
+    window.loadNIST800172Framework = (data) => {
+      if (frameworkPromiseResolver) frameworkPromiseResolver(data);
+    };
+
+    // Function to dynamically load a framework's script file
+    function loadFrameworkScript(frameworkId) {
+      return new Promise((resolve, reject) => {
+        const framework = FRAMEWORK_DEFINITIONS[frameworkId];
+        if (!framework) {
+          return reject(new Error(`Framework '${frameworkId}' not found.`));
+        }
+        frameworkPromiseResolver = resolve;
+
+        const oldScript = document.querySelector('script[data-framework-script]');
+        if (oldScript) oldScript.remove();
+
+        const script = document.createElement('script');
+        script.src = framework.script;
+        script.dataset.frameworkScript = "true";
+        script.onerror = () => reject(new Error(`Failed to load script: ${framework.script}`));
+        document.head.appendChild(script);
+      });
+    }
+
+    // --- CORE APPLICATION LOGIC ---
+    document.addEventListener('DOMContentLoaded', async () => {
+      const DEFAULT_FRAMEWORK = 'nist_csf_2';
+      let selectedFrameworkId = localStorage.getItem('selectedFramework') || DEFAULT_FRAMEWORK;
+
+      // Normalize legacy/mismatched IDs
+      if (selectedFrameworkId === 'nistcsf2') selectedFrameworkId = 'nist_csf_2';
+      if (selectedFrameworkId === 'nist800-171r3') selectedFrameworkId = 'nist_800_171';
+      if (selectedFrameworkId === 'nist800-172') selectedFrameworkId = 'nist_800_172';
+
+      try {
+        populateFrameworkSelector(selectedFrameworkId);
+        const frameworkData = await loadFrameworkScript(selectedFrameworkId);
+
+        await seedDatabase(frameworkData.questions, selectedFrameworkId);
+        setupTabs();
+        setupEventListeners(selectedFrameworkId);
+        setupThemeToggle();
+        await renderUI();
+      } catch (error) {
+        console.error("Failed to initialize framework:", error);
+        document.body.innerHTML = `<div class="p-8 text-center text-rose-500 dark:text-rose-400">
+        <h1 class="text-2xl font-bold">Error Loading Framework</h1>
+        <p class="mt-2">Could not load the required framework file. Please ensure the framework script files (e.g., 'nistcsf2questions.js') are in the same directory as this HTML file and check the console for more details.</p>
+    </div>`;
+      }
+    });
+
+    function populateFrameworkSelector(currentId) {
+      const selectElement = document.getElementById('framework-select');
+      selectElement.innerHTML = '';
+      for (const [id, framework] of Object.entries(FRAMEWORK_DEFINITIONS)) {
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = framework.name;
+        if (id === currentId) option.selected = true;
+        selectElement.appendChild(option);
+      }
+    }
+
+    async function seedDatabase(questions, frameworkId) {
+      const dbFramework = await db.metadata.get('frameworkId');
+      const questionCount = await db.questions.count();
+      if (!dbFramework || dbFramework.value !== frameworkId || questionCount === 0) {
+        console.log('Framework mismatch or empty DB. Re-seeding database for:', frameworkId);
+        await db.transaction('rw', db.questions, db.answers, db.metadata, async () => {
+          await db.questions.clear();
+          await db.answers.clear();
+          await db.metadata.clear();
+          await db.questions.bulkAdd(questions);
+          await db.metadata.put({ key: 'frameworkId', value: frameworkId });
+        });
+      }
+    }
+
+    function setupThemeToggle() {
+      const themeToggleBtn = document.getElementById('theme-toggle');
+      const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+      const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
+      function applyTheme(theme) {
+        const dateInput = document.getElementById('assessment-date');
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          themeToggleDarkIcon.classList.add('hidden');
+          themeToggleLightIcon.classList.remove('hidden');
+          if (dateInput) dateInput.style.colorScheme = 'dark';
+        } else {
+          document.documentElement.classList.remove('dark');
+          themeToggleLightIcon.classList.add('hidden');
+          themeToggleDarkIcon.classList.remove('hidden');
+          if (dateInput) dateInput.style.colorScheme = 'light';
+        }
+      }
+      applyTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+      themeToggleBtn.addEventListener('click', function () {
+        const newTheme = document.documentElement.classList.contains('dark') ? 'light' : 'dark';
+        localStorage.setItem('theme', newTheme);
+        applyTheme(newTheme);
+      });
+    }
+
+    function setupEventListeners(currentFrameworkId) {
+      // Mobile menu toggle
+      const mobileMenuButton = document.getElementById('mobile-menu-button');
+      const sidebar = document.getElementById('sidebar-nav');
+      mobileMenuButton.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+      });
+
+      const frameworkSelect = document.getElementById('framework-select');
+      const modal = document.getElementById('framework-change-modal');
+      let pendingFrameworkId = null;
+      frameworkSelect.addEventListener('change', (event) => {
+        pendingFrameworkId = event.target.value;
+        if (pendingFrameworkId !== currentFrameworkId) {
+          modal.classList.remove('hidden');
+          event.target.value = currentFrameworkId;
+        }
+      });
+      document.getElementById('cancel-framework-change-btn').addEventListener('click', () => {
+        modal.classList.add('hidden');
+        pendingFrameworkId = null;
+      });
+      document.getElementById('confirm-framework-change-btn').addEventListener('click', async () => {
+        if (pendingFrameworkId) {
+          localStorage.setItem('selectedFramework', pendingFrameworkId);
+          location.reload();
+        }
+      });
+
+      const questionnaireContainer = document.getElementById('questionnaire-container');
+      questionnaireContainer.addEventListener('click', handleMaturityClick);
+      questionnaireContainer.addEventListener('input', handleFieldInput);
+      questionnaireContainer.addEventListener('change', handleGapToggleChange); // New listener for gap toggle
+
+      document.getElementById('assessment-info-panel').addEventListener('input', handleMetadataInput);
+      document.getElementById('export-assessment-btn').addEventListener('click', exportAssessment);
+      document.getElementById('import-assessment-input').addEventListener('change', importAssessment);
+      document.getElementById('clear-assessment-btn').addEventListener('click', confirmClearAssessment);
+      document.getElementById('maturity-chart-container').addEventListener('click', handleMaturityChartClick);
+      document.getElementById('heatmap-container').addEventListener('click', handleHeatmapClick);
+      document.getElementById('modal-close-btn').addEventListener('click', () => document.getElementById('heatmap-modal').classList.add('hidden'));
+      document.getElementById('heatmap-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'heatmap-modal') document.getElementById('heatmap-modal').classList.add('hidden');
+      });
+      document.getElementById('modal-content').addEventListener('click', (e) => {
+        const item = e.target.closest('.modal-gap-item');
+        if (item) {
+          document.getElementById('heatmap-modal').classList.add('hidden');
+          // Find the button in the sidebar and click it
+          const questionnaireButton = document.querySelector(`#tabs-container a[data-panel-id="questionnaire-panel"]`);
+          if (questionnaireButton) questionnaireButton.click();
+
+          setTimeout(() => scrollToQuestion(item.dataset.questionId), 100);
+        }
+      });
+
+      // --- Filter and Sort Event Listeners ---
+      document.getElementById('questionnaire-filters').addEventListener('input', handleQuestionnaireFilterChange);
+      document.getElementById('gaps-report-filters').addEventListener('input', handleGapsReportFilterChange);
+    }
+
+    function setupTabs() {
+      const tabs = [
+        { name: 'Home', panelId: 'about-panel' },
+        { name: 'Assessment', panelId: 'assessment-info-panel' },
+        { name: 'Questionnaire', panelId: 'questionnaire-panel' },
+        { name: 'Control Maturity', panelId: 'maturity-panel' },
+        { name: 'Risk Heat Map', panelId: 'heatmap-panel' },
+        { name: 'Gaps Report', panelId: 'report-panel' },
+        { name: 'Full Report', panelId: 'full-report-panel' }
+      ];
+
+      const tabsContainer = document.getElementById('tabs-container');
+      if (!tabsContainer) {
+        console.error("Critical Error: Sidebar navigation container not found.");
+        return;
+      }
+      tabsContainer.innerHTML = '';
+
+      const tabPanels = tabs.map(tab => document.getElementById(tab.panelId));
+      const sidebar = document.getElementById('sidebar-nav');
+      const dashboard = document.getElementById('dashboard');
+
+      tabs.forEach(tab => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = '#';
+        a.textContent = tab.name;
+        a.dataset.panelId = tab.panelId;
+        a.className = 'flex items-center p-3 text-sm font-medium text-slate-700 dark:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200';
+
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+
+          if (tab.panelId === 'about-panel') {
+            dashboard.classList.add('hidden');
+          } else {
+            dashboard.classList.remove('hidden');
+          }
+
+          tabPanels.forEach(panel => {
+            if (panel) panel.classList.add('hidden');
+          });
+
+          const targetPanel = document.getElementById(tab.panelId);
+          if (targetPanel) targetPanel.classList.remove('hidden');
+
+          document.querySelectorAll('#tabs-container a').forEach(link => {
+            link.classList.remove('bg-rose-50', 'dark:bg-slate-700', 'text-rose-900', 'dark:text-rose-100', 'font-bold');
+          });
+          a.classList.add('bg-rose-50', 'dark:bg-slate-700', 'text-rose-900', 'dark:text-rose-100', 'font-bold');
+
+          if (window.innerWidth < 768) {
+            sidebar.classList.add('-translate-x-full');
+          }
+        });
+
+        li.appendChild(a);
+        tabsContainer.appendChild(li);
+      });
+
+      // Set initial active tab manually
+      const firstLink = document.querySelector('#tabs-container a');
+      if (firstLink) {
+        tabPanels.forEach(panel => {
+          if (panel) panel.classList.add('hidden');
+        });
+        const firstPanel = document.getElementById(tabs[0].panelId);
+        if (firstPanel) firstPanel.classList.remove('hidden');
+        firstLink.classList.add('bg-rose-50', 'dark:bg-slate-700', 'text-rose-900', 'dark:text-rose-100', 'font-bold');
+
+        // Hide dashboard on initial load as Home is default
+        if (dashboard) dashboard.classList.add('hidden');
+      }
+    }
+
+    async function scrollToQuestion(questionId) {
+      const card = document.querySelector(`[data-card-id="${questionId}"]`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        card.classList.add('ring-2', 'ring-rose-500', 'transition-shadow', 'duration-1000');
+        setTimeout(() => card.classList.remove('ring-2', 'ring-rose-500'), 2000);
+      }
+    }
+
+    // --- DATA HANDLING AND RENDERING ---
+    async function refreshDataAndRenderAll() {
+      allQuestionsCache = await db.questions.toArray();
+      allAnswersCache = await db.answers.toArray();
+      renderAllViews();
+    }
+
+    function renderAllViews() {
+      populateFilterDropdowns(allQuestionsCache);
+      renderMetadata();
+      renderQuestions(allQuestionsCache, allAnswersCache);
+      updateDashboardAndGaps(allQuestionsCache, allAnswersCache);
+      renderMaturityChart(allQuestionsCache, allAnswersCache);
+      renderHeatMap(allQuestionsCache, allAnswersCache);
+      renderFullReport(allQuestionsCache, allAnswersCache);
+    }
+
+    async function renderUI() {
+      await refreshDataAndRenderAll();
+    }
+
+    function populateFilterDropdowns(questions) {
+      const families = [...new Set(questions.map(q => q.family))].sort();
+      const qFamilySelect = document.getElementById('q-family-filter');
+      const gapsFamilySelect = document.getElementById('gaps-family-filter');
+
+      // Preserve selected value
+      const currentQFamily = qFamilySelect.value;
+      const currentGapsFamily = gapsFamilySelect.value;
+
+      qFamilySelect.innerHTML = '<option value="all">All Families</option>';
+      gapsFamilySelect.innerHTML = '<option value="all">All Families</option>';
+
+      families.forEach(family => {
+        qFamilySelect.innerHTML += `<option value="${family}">${family}</option>`;
+        gapsFamilySelect.innerHTML += `<option value="${family}">${family}</option>`;
+      });
+
+      qFamilySelect.value = currentQFamily;
+      gapsFamilySelect.value = currentGapsFamily;
+    }
+
+    async function renderFullReport(questions, answers) {
+      const container = document.getElementById('full-report-panel');
+      const metadata = await db.metadata.toArray();
+      const metadataObj = metadata.reduce((obj, item) => { obj[item.key] = item.value; return obj; }, {});
+      const implementedCount = answers.filter(a => a.maturityScore !== undefined && a.maturityScore !== 0 && !a.isGap).length;
+      const gapCount = answers.filter(a => a.isGap).length;
+      const maturityChartClone = document.getElementById('maturity-chart-container').cloneNode(true);
+      const heatmapClone = document.getElementById('heatmap-container').cloneNode(true);
+      let html = `<div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-md print-force-light">`;
+      html += `<button onclick="window.print()" class="no-print bg-rose-900 hover:bg-rose-800 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 mb-8">Print This Report</button>`;
+      html += `<div class="print-no-break"><h1 class="text-4xl font-bold text-center mb-4">GRC Assessment Report</h1><h2 class="text-2xl text-center text-slate-600 dark:text-slate-400 mb-12">${metadataObj.assessmentName || 'Untitled Assessment'}</h2><div class="grid grid-cols-2 gap-4 mb-8 text-lg"><div><strong>Assessed By:</strong> ${metadataObj.assessedBy || 'N/A'}</div><div><strong>Assessment Date:</strong> ${metadataObj.assessmentDate || 'N/A'}</div></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12"><div class="border border-slate-300 dark:border-slate-600 p-6 rounded-lg text-center"><h3 class="text-lg font-semibold text-slate-500 dark:text-slate-400">Total Controls</h3><p class="text-3xl font-bold mt-2">${questions.length}</p></div><div class="border border-slate-300 dark:border-slate-600 p-6 rounded-lg text-center"><h3 class="text-lg font-semibold text-slate-500 dark:text-slate-400">Implemented Controls</h3><p class="text-3xl font-bold text-purple-500 mt-2">${implementedCount}</p></div><div class="border border-slate-300 dark:border-slate-600 p-6 rounded-lg text-center"><h3 class="text-lg font-semibold text-slate-500 dark:text-slate-400">Identified Gaps</h3><p class="text-3xl font-bold text-rose-600 mt-2">${gapCount}</p></div></div></div>`;
+      html += `<div class="print-break-before print-no-break"><h2 class="text-3xl font-bold mt-12 mb-6">Executive Summary</h2><h3 class="text-2xl font-semibold mb-4">Control Maturity Overview</h3>${maturityChartClone.outerHTML}<h3 class="text-2xl font-semibold mt-12 mb-4">Risk Heat Map</h3>${heatmapClone.outerHTML}</div>`;
+
+      const gapAnswers = answers.filter(a => a.isGap);
+      if (gapAnswers.length > 0) {
+        html += `<div class="print-break-before"><h2 class="text-3xl font-bold mt-12 mb-6">Identified Gaps Details</h2>`;
+        const questionOrderMap = new Map(questions.map(q => [q.id, q.order]));
+        sortItems(gapAnswers, viewSettings.fullReport.gapsSort, questionOrderMap);
+        gapAnswers.forEach(answer => {
+          const question = questions.find(q => q.id === answer.questionId); if (!question) return;
+          const { remediation = 'No remediation plan documented.', impact = 'Not Set', likelihood = 'Not Set' } = answer;
+          html += `<div class="print-no-break mb-6 border border-slate-300 dark:border-slate-600 rounded-lg p-4"><p class="font-bold text-lg text-rose-600">${question.family} / ${question.id}</p><p class="mt-2 text-base">${question.gap_description}</p><div class="mt-4 grid grid-cols-2 gap-4 text-sm"><div><span class="font-semibold">IMPACT:</span> <span class="font-bold">${impact}</span></div><div><span class="font-semibold">LIKELIHOOD:</span> <span class="font-bold">${likelihood}</span></div></div><div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700"><p class="text-sm font-semibold">Recommended Remediation:</p><p class="mt-1 text-base whitespace-pre-wrap">${remediation}</p></div></div>`;
+        });
+        html += `</div>`;
+      }
+
+      const implementedAnswers = answers.filter(a => a.maturityScore !== undefined && a.maturityScore !== 0 && !a.isGap);
+      if (implementedAnswers.length > 0) {
+        html += `<div class="print-break-before"><h2 class="text-3xl font-bold mt-12 mb-6">Implemented Controls Details</h2>`;
+        const questionOrderMap = new Map(questions.map(q => [q.id, q.order]));
+        sortItems(implementedAnswers, viewSettings.fullReport.implementedSort, questionOrderMap);
+        implementedAnswers.forEach(answer => {
+          const question = questions.find(q => q.id === answer.questionId);
+          if (!question) return;
+          const maturityLevels = { 1: { label: 'Ad Hoc' }, 2: { label: 'Repeatable' }, 3: { label: 'Defined' }, 4: { label: 'Managed' }, 5: { label: 'Optimized' }, 0: { label: 'N/A' } };
+          const maturityLabel = maturityLevels[answer.maturityScore]?.label || 'Not Set';
+          const implementationDescription = answer.implementationDescription || 'No description provided.';
+
+          html += `<div class="print-no-break mb-6 border border-slate-300 dark:border-slate-600 rounded-lg p-4">
+        <p class="font-bold text-lg text-slate-800 dark:text-slate-200">${question.family} / ${question.id}</p>
+        <p class="mt-2 text-base">${question.assessment_question}</p>
+        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <p class="text-sm font-semibold">Maturity Score:</p>
+            <p class="mt-1 text-base">${maturityLabel}</p>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <p class="text-sm font-semibold">Implementation Description:</p>
+            <p class="mt-1 text-base whitespace-pre-wrap">${implementationDescription}</p>
+        </div>
+           </div>`;
+        });
+        html += `</div>`;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+
+    // --- EVENT HANDLERS & DEBOUNCING ---
+    const debouncedPartialSave = debounce(async (questionId, field, value) => {
+      await saveAnswer(questionId, field, value);
+      // Update the cache in memory so other views are correct
+      const answerIndex = allAnswersCache.findIndex(a => a.questionId === questionId);
+      if (answerIndex > -1) {
+        allAnswersCache[answerIndex][field] = value;
+      } else {
+        allAnswersCache.push({ questionId, [field]: value });
+      }
+
+      // Update specific parts of the UI that depend on this data, but DO NOT re-render the whole list
+      updateDashboardAndGaps(allQuestionsCache, allAnswersCache);
+      renderMaturityChart(allQuestionsCache, allAnswersCache);
+      renderHeatMap(allQuestionsCache, allAnswersCache);
+      renderFullReport(allQuestionsCache, allAnswersCache);
+    }, 500);
+
+    async function handleFieldInput(event) {
+      const target = event.target;
+      if (target.matches('.notes-textarea, .rating-select')) {
+        debouncedPartialSave(target.dataset.questionId, target.dataset.field, target.value);
+      }
+    }
+    async function handleGapToggleChange(event) {
+      const target = event.target;
+      if (target.matches('.gap-toggle-input')) {
+        // unique behavior for gap toggle: we need to re-render to show/hide the remediation fields
+        // preventing focus loss is less critical here than for typing, and seeing the fields appear is essential
+        await saveAnswer(target.dataset.questionId, 'isGap', target.checked);
+        await refreshDataAndRenderAll();
+      }
+    }
+    async function handleMaturityClick(event) {
+      const target = event.target.closest('.maturity-btn');
+      if (!target) return;
+      await saveAnswer(target.dataset.questionId, 'maturityScore', parseInt(target.dataset.score, 10));
+      await refreshDataAndRenderAll();
+    }
+
+    const handleQuestionnaireFilterChange = debounce(() => {
+      const settings = viewSettings.questionnaire;
+      settings.filters.searchTerm = document.getElementById('q-search').value.toLowerCase();
+      settings.filters.family = document.getElementById('q-family-filter').value;
+      settings.filters.maturity = document.getElementById('q-maturity-filter').value;
+      settings.filters.isGap = document.getElementById('q-gap-filter').value;
+      const [by, direction] = document.getElementById('q-sort').value.split('-');
+      settings.sort = { by, direction };
+      renderQuestions(allQuestionsCache, allAnswersCache);
+    }, 300);
+
+    function handleGapsReportFilterChange() {
+      const settings = viewSettings.gapsReport;
+      settings.filters.family = document.getElementById('gaps-family-filter').value;
+      settings.filters.impact = document.getElementById('gaps-impact-filter').value;
+      settings.filters.likelihood = document.getElementById('gaps-likelihood-filter').value;
+      const [by, direction] = document.getElementById('gaps-sort').value.split('-');
+      settings.sort = { by, direction };
+      renderGapsReport(allQuestionsCache, allAnswersCache);
+    }
+
+    async function handleMetadataInput(event) {
+      const target = event.target.closest('.metadata-input');
+      if (target) {
+        await db.metadata.put({ key: target.dataset.field, value: target.value });
+        // Debounce the refresh for metadata to avoid flicker
+        clearTimeout(window.metaDebounce);
+      }
+    }
+    async function saveAnswer(questionId, field, value) { const existingAnswer = await db.answers.get(questionId) || { questionId }; existingAnswer[field] = value; await db.answers.put(existingAnswer); }
+    function debounce(func, timeout = 300) { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => { func.apply(this, args); }, timeout); }; }
+
+    function updateDashboardAndGaps(questions, answers) {
+      const implementedCount = answers.filter(a => a.maturityScore !== undefined && a.maturityScore !== 0 && !a.isGap).length;
+      const gapCount = answers.filter(a => a.isGap).length;
+      document.getElementById('total-questions').textContent = questions.length;
+      document.getElementById('implemented-controls').textContent = implementedCount;
+      document.getElementById('identified-gaps').textContent = gapCount;
+      renderGapsReport(questions, answers);
+    }
+
+    function renderGapsReport(questions, answers) {
+      const container = document.getElementById('gaps-report-container');
+      container.innerHTML = '';
+
+      const filters = viewSettings.gapsReport.filters;
+      let gapAnswers = answers.filter(a => a.isGap);
+      const questionMap = new Map(questions.map(q => [q.id, q]));
+
+      // Filtering
+      if (filters.family !== 'all') {
+        gapAnswers = gapAnswers.filter(a => questionMap.get(a.questionId)?.family === filters.family);
+      }
+      if (filters.impact !== 'all') {
+        gapAnswers = gapAnswers.filter(a => (a.impact || 'Not Set') === filters.impact);
+      }
+      if (filters.likelihood !== 'all') {
+        gapAnswers = gapAnswers.filter(a => (a.likelihood || 'Not Set') === filters.likelihood);
+      }
+
+      // Sorting
+      const questionOrderMap = new Map(questions.map(q => [q.id, q.order]));
+      sortItems(gapAnswers, viewSettings.gapsReport.sort, questionOrderMap);
+
+      if (gapAnswers.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 dark:text-slate-400 italic">No gaps match the current filters.</p>';
+      } else {
+        gapAnswers.forEach(answer => {
+          const question = questionMap.get(answer.questionId);
+          if (!question) return;
+          const { remediation = 'No remediation plan documented.', impact = 'Not Set', likelihood = 'Not Set' } = answer;
+          const impactColors = { 'Minor': 'bg-sky-500 text-white', 'Moderate': 'bg-amber-500 text-white', 'Major': 'bg-orange-500 text-white', 'Critical': 'bg-rose-600 text-white', 'Not Set': 'bg-slate-600 text-slate-200' };
+          const likelihoodColors = { 'Remote': 'bg-emerald-500 text-white', 'Unlikely': 'bg-sky-500 text-white', 'Possible': 'bg-amber-500 text-white', 'Likely': 'bg-orange-500 text-white', 'Certain': 'bg-rose-600 text-white', 'Not Set': 'bg-slate-600 text-slate-200' };
+          const gapElement = `<div class="glass-panel border-l-4 border-rose-500 p-4 rounded-r-xl shadow-md"><p class="font-bold text-rose-600 dark:text-rose-400">${question.family} / ${question.id}</p><p class="mt-2 text-slate-700 dark:text-slate-300">${question.gap_description}</p><div class="mt-4 flex items-center gap-4 text-xs flex-wrap"><div><span class="font-semibold text-slate-600 dark:text-slate-400">IMPACT:</span> <span class="px-2 py-1 rounded-full font-bold ${impactColors[impact]}">${impact}</span></div><div><span class="font-semibold text-slate-600 dark:text-slate-400">LIKELIHOOD:</span> <span class="px-2 py-1 rounded-full font-bold ${likelihoodColors[likelihood]}">${likelihood}</span></div></div><div class="mt-4 pt-3 border-t border-slate-300 dark:border-slate-700"><p class="text-sm font-semibold text-slate-600 dark:text-slate-400">Recommended Remediation:</p><p class="mt-1 text-slate-700 dark:text-slate-300 whitespace-pre-wrap">${remediation}</p></div></div>`;
+          container.innerHTML += gapElement;
+        });
+      }
+    }
+
+    function sortItems(items, sortConfig, questionOrderMap) {
+      const { by, direction } = sortConfig;
+      const impactOrder = { "Critical": 4, "Major": 3, "Moderate": 2, "Minor": 1, "Not Set": 0 };
+      const likelihoodOrder = { "Certain": 5, "Likely": 4, "Possible": 3, "Unlikely": 2, "Remote": 1, "Not Set": 0 };
+
+      items.sort((a, b) => {
+        let valA, valB;
+        switch (by) {
+          case 'maturity':
+            valA = a.maturityScore ?? -1;
+            valB = b.maturityScore ?? -1;
+            break;
+          case 'impact':
+            valA = impactOrder[a.impact || "Not Set"];
+            valB = impactOrder[b.impact || "Not Set"];
+            break;
+          case 'likelihood':
+            valA = likelihoodOrder[a.likelihood || "Not Set"];
+            valB = likelihoodOrder[b.likelihood || "Not Set"];
+            break;
+          case 'order':
+          default:
+            valA = questionOrderMap.get(a.questionId) || Infinity;
+            valB = questionOrderMap.get(b.questionId) || Infinity;
+        }
+
+        if (valA < valB) return direction === 'asc' ? -1 : 1;
+        if (valA > valB) return direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+
+    async function exportAssessment() { try { const metadata = await db.metadata.toArray(); const answers = await db.answers.toArray(); const questions = await db.questions.toArray(); const frameworkIdRecord = await db.metadata.get('frameworkId'); const exportData = { metadata: metadata.reduce((obj, item) => { obj[item.key] = item.value; return obj; }, {}), answers, questions, frameworkId: frameworkIdRecord ? frameworkIdRecord.value : null }; const assessmentName = exportData.metadata.assessmentName || 'grc-assessment'; const fileName = `${assessmentName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.json`; const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = fileName; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(blob); } catch (error) { console.error('Failed to export assessment:', error); } }
+    async function importAssessment(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (e) => { try { const data = JSON.parse(e.target.result); if (!data.answers || !data.questions || !data.metadata) throw new Error('Invalid assessment file format.'); if (data.frameworkId) { localStorage.setItem('selectedFramework', data.frameworkId); } else { localStorage.removeItem('selectedFramework'); } await db.transaction('rw', db.questions, db.answers, db.metadata, async () => { await db.questions.clear(); await db.answers.clear(); await db.metadata.clear(); await db.questions.bulkPut(data.questions); await db.answers.bulkPut(data.answers); const metadataPuts = Object.entries(data.metadata).map(([key, value]) => db.metadata.put({ key, value })); await Promise.all(metadataPuts); if (data.frameworkId) await db.metadata.put({ key: 'frameworkId', value: data.frameworkId }); }); location.reload(); } catch (error) { console.error('Failed to import assessment:', error); } }; reader.readAsText(file); event.target.value = ''; }
+    function confirmClearAssessment(event) { const btn = event.target; if (btn.dataset.confirmed) { clearAssessment(); btn.textContent = 'Start New Assessment'; btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600'); btn.classList.add('bg-rose-600', 'hover:bg-rose-700'); delete btn.dataset.confirmed; } else { btn.textContent = 'Are you sure? Click again to clear.'; btn.classList.remove('bg-rose-600', 'hover:bg-rose-700'); btn.classList.add('bg-yellow-500', 'hover:bg-yellow-600'); btn.dataset.confirmed = 'true'; setTimeout(() => { if (btn.dataset.confirmed) { btn.textContent = 'Start New Assessment'; btn.classList.remove('bg-yellow-500', 'hover:bg-yellow-600'); btn.classList.add('bg-rose-600', 'hover:bg-rose-700'); delete btn.dataset.confirmed; } }, 3000); } }
+    async function clearAssessment() { await db.answers.clear(); const metadataToKeep = ['frameworkId']; const allMeta = await db.metadata.toArray(); const metaToDelete = allMeta.filter(m => !metadataToKeep.includes(m.key)).map(m => m.key); await db.metadata.bulkDelete(metaToDelete); await renderUI(); }
+    async function renderMetadata() { const metadataFields = ['assessmentName', 'assessedBy', 'assessmentDate']; for (const field of metadataFields) { const record = await db.metadata.get(field); const input = document.querySelector(`[data-field="${field}"]`); if (input) { input.value = record ? record.value : ''; } } }
+
+    function renderQuestions(questions, answers) {
+      const container = document.getElementById('questionnaire-container');
+      container.innerHTML = '';
+
+      const answerMap = new Map(answers.map(a => [a.questionId, a]));
+      const filters = viewSettings.questionnaire.filters;
+
+      // Filtering
+      let filteredQuestions = questions.filter(q => {
+        const answer = answerMap.get(q.id) || {};
+        if (filters.searchTerm && !q.assessment_question.toLowerCase().includes(filters.searchTerm) && !q.id.toLowerCase().includes(filters.searchTerm)) return false;
+        if (filters.family !== 'all' && q.family !== filters.family) return false;
+        if (filters.isGap === 'yes' && !answer.isGap) return false;
+        if (filters.isGap === 'no' && answer.isGap) return false;
+        if (filters.maturity !== 'all') {
+          if (filters.maturity === 'unanswered' && answer.maturityScore !== undefined) return false;
+          if (filters.maturity !== 'unanswered' && (answer.maturityScore === undefined || String(answer.maturityScore) !== filters.maturity)) return false;
+        }
+        return true;
+      });
+
+      // Sorting
+      const questionOrderMap = new Map(questions.map(q => [q.id, q.order]));
+      let sortableItems = filteredQuestions.map(q => {
+        return { ...answerMap.get(q.id), questionId: q.id, question: q };
+      });
+      sortItems(sortableItems, viewSettings.questionnaire.sort, questionOrderMap);
+      filteredQuestions = sortableItems.map(item => item.question);
+
+
+      if (filteredQuestions.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 dark:text-slate-400 italic text-center p-8">No controls match the current filters.</p>';
+        return;
+      }
+
+      filteredQuestions.forEach(q => {
+        const answer = answerMap.get(q.id) || {};
+        const { maturityScore, implementationDescription = '', remediation = '', impact = '', likelihood = '', isGap = false } = answer;
+        // Updated maturity colors to Rose/Peach/Gold/Lilac palette
+        const maturityLevels = {
+          1: { label: '1: Ad Hoc', color: 'bg-rose-400' },
+          2: { label: '2: Repeatable', color: 'bg-orange-400' },
+          3: { label: '3: Defined', color: 'bg-amber-400' },
+          4: { label: '4: Managed', color: 'bg-sky-400' },
+          5: { label: '5: Optimized', color: 'bg-purple-400' },
+          0: { label: 'N/A', color: 'bg-slate-500' }
+        };
+        let maturityButtonsHTML = Object.entries(maturityLevels).map(([score, { label, color }]) => `<button data-question-id="${q.id}" data-score="${score}" class="maturity-btn ${parseInt(score) === maturityScore ? `maturity-btn-selected ${color}` : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500'} px-4 py-2 rounded-md font-semibold transition-all duration-200 ease-in-out text-white text-sm">${label}</button>`).join('');
+        const remediationFieldClass = isGap ? '' : 'hidden';
+        const questionCard = `
+    <div class="glass-panel p-6 rounded-xl shadow-md mb-4 transition-all duration-300" data-card-id="${q.id}">
+        <p class="text-sm font-semibold text-rose-900 dark:text-rose-100">${q.family} / ${q.id}</p>
+        <p class="mt-2 text-lg text-slate-800 dark:text-slate-200">${q.assessment_question}</p>
+        <div class="mt-6">
+      <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Control Maturity Score</label>
+      <div class="flex flex-wrap items-center gap-3">${maturityButtonsHTML}</div>
+        </div>
+        <div class="mt-6">
+      <div>
+          <label for="implementation-${q.id}" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Implementation Description</label>
+          <textarea id="implementation-${q.id}" data-question-id="${q.id}" data-field="implementationDescription" class="notes-textarea w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-200 p-3 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500" rows="6" placeholder="Describe the current implementation, including evidence, artifacts, and any compensating controls...">${implementationDescription}</textarea>
+      </div>
+        </div>
+        <div class="mt-6">
+      <label for="isGap-${q.id}" class="gap-toggle-label flex items-center cursor-pointer">
+          <div class="relative">
+        <input type="checkbox" id="isGap-${q.id}" data-question-id="${q.id}" class="gap-toggle-input sr-only" ${isGap ? 'checked' : ''}>
+        <div class="bg w-14 h-8 bg-slate-300 dark:bg-slate-600 rounded-full shadow-inner"></div>
+        <div class="dot absolute w-6 h-6 bg-white rounded-full shadow left-1 top-1"></div>
+          </div>
+          <span class="ml-3 text-slate-700 dark:text-slate-300 font-medium">Identify as Gap</span>
+      </label>
+        </div>
+        <div id="remediation-container-${q.id}" class="mt-6 border-t border-slate-200 dark:border-slate-700 pt-6 ${remediationFieldClass}">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+        <label for="impact-${q.id}" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Impact Rating</label>
+        <select id="impact-${q.id}" data-question-id="${q.id}" data-field="impact" class="rating-select w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-200 p-3 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+            <option value="" ${impact === '' ? 'selected' : ''} disabled>Select Impact</option>
+            <option value="Minor" ${impact === 'Minor' ? 'selected' : ''}>Minor</option>
+            <option value="Moderate" ${impact === 'Moderate' ? 'selected' : ''}>Moderate</option>
+            <option value="Major" ${impact === 'Major' ? 'selected' : ''}>Major</option>
+            <option value="Critical" ${impact === 'Critical' ? 'selected' : ''}>Critical</option>
+        </select>
+          </div>
+          <div>
+        <label for="likelihood-${q.id}" class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Likelihood Rating</label>
+        <select id="likelihood-${q.id}" data-question-id="${q.id}" data-field="likelihood" class="rating-select w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-slate-200 p-3 rounded-md border border-slate-300 dark:border-slate-600 focus:ring-2 focus:ring-rose-500">
+            <option value="" ${likelihood === '' ? 'selected' : ''} disabled>Select Likelihood</option>
+            <option value="Remote" ${likelihood === 'Remote' ? 'selected' : ''}>Remote</option>
+            <option value="Unlikely" ${likelihood === 'Unlikely' ? 'selected' : ''}>Unlikely</option>
+            <option value="Possible" ${likelihood === 'Possible' ? 'selected' : ''}>Possible</option>
+            <option value="Likely" ${likelihood === 'Likely' ? 'selected' : ''}>Likely</option>
+            <option value="Certain" ${likelihood === 'Certain' ? 'selected' : ''}>Certain</option>
+        </select>
+          </div>
+      </div>
+      <label for="remediation-${q.id}" class="block text-sm font-medium text-rose-600 dark:text-rose-500 mb-2">Recommended Remediation (POA&M)</label>
+      <textarea id="remediation-${q.id}" data-question-id="${q.id}" data-field="remediation" class="notes-textarea w-full bg-slate-100 dark:bg-slate-700/50 p-3 rounded-md border border-rose-400 dark:border-rose-500/50 focus:ring-2 focus:ring-rose-500" rows="4" placeholder="Define actionable steps...">${remediation}</textarea>
+        </div>
+    </div>`;
+        container.innerHTML += questionCard;
+      });
+    }
+
+
+    function handleMaturityChartClick(event) {
+      const target = event.target;
+      const family = target.dataset.family;
+      const score = target.dataset.score;
+      if (!family || !score) return;
+
+      db.answers.where('maturityScore').equals(parseInt(score)).toArray().then(matchingAnswers => {
+        const matchingAnswerIds = new Set(matchingAnswers.map(a => a.questionId));
+        db.questions.where('family').equals(family).toArray().then(familyQuestions => {
+          const firstMatch = familyQuestions.find(q => matchingAnswerIds.has(q.id));
+          if (firstMatch) {
+            const questionnaireButton = document.querySelector(`#tabs-container a[data-panel-id="questionnaire-panel"]`);
+            if (questionnaireButton) questionnaireButton.click();
+            setTimeout(() => scrollToQuestion(firstMatch.id), 100);
+          }
+        });
+      });
+    }
+
+    async function handleHeatmapClick(event) {
+      const cell = event.target.closest('.heatmap-cell');
+      if (!cell || cell.dataset.count === '0') return;
+      const impact = cell.dataset.impact;
+      const likelihood = cell.dataset.likelihood;
+      const gaps = await db.answers.filter(a => a.isGap && a.impact === impact && a.likelihood === likelihood).toArray();
+      const modal = document.getElementById('heatmap-modal');
+      document.getElementById('modal-title').textContent = `Gaps: ${impact} Impact / ${likelihood} Likelihood (${gaps.length})`;
+      const content = document.getElementById('modal-content');
+      const questionOrderMap = new Map(allQuestionsCache.map(q => [q.id, q.order]));
+      sortItems(gaps, { by: 'order', direction: 'asc' }, questionOrderMap);
+      content.innerHTML = gaps.map(gap => {
+        const question = allQuestionsCache.find(q => q.id === gap.questionId);
+        return `<div class="p-3 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md cursor-pointer modal-gap-item" data-question-id="${question.id}"><p class="font-semibold text-rose-900 dark:text-rose-100">${question.id}: ${question.title}</p><p class="text-sm text-slate-600 dark:text-slate-400 mt-1">${question.gap_description}</p></div>`;
+      }).join('');
+      modal.classList.remove('hidden');
+    }
+
+    function renderMaturityChart(questions, answers) {
+      const container = document.getElementById('maturity-chart-container');
+      // Updated colors here as well
+      const maturityLevels = {
+        1: { label: 'Ad Hoc', color: 'bg-rose-400' },
+        2: { label: 'Repeatable', color: 'bg-orange-400' },
+        3: { label: 'Defined', color: 'bg-amber-400' },
+        4: { label: 'Managed', color: 'bg-sky-400' },
+        5: { label: 'Optimized', color: 'bg-purple-400' },
+        0: { label: 'N/A', color: 'bg-slate-500' }
+      };
+      const families = [...new Set(questions.map(q => q.family))].sort(); let html = '';
+      families.forEach(family => {
+        const familyQuestions = questions.filter(q => q.family === family);
+        const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 0: 0, 'unanswered': 0 };
+        familyQuestions.forEach(q => { const answer = answers.find(a => a.questionId === q.id); if (answer && answer.maturityScore !== undefined) { counts[answer.maturityScore]++; } else { counts.unanswered++; } });
+        html += `<div class="mb-4"><h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">${family}</h3><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-8 flex overflow-hidden">`;
+        let totalAnswered = familyQuestions.length - counts.unanswered; if (totalAnswered === 0) totalAnswered = 1;
+        Object.entries(maturityLevels).forEach(([score, { label, color }]) => { const count = counts[score]; if (count > 0) { const percentage = (count / familyQuestions.length) * 100; html += `<div class="${color} h-full" style="width: ${percentage}%" title="${label}: ${count} control(s)" data-family="${family}" data-score="${score}"></div>`; } });
+        if (counts.unanswered > 0) { const percentage = (counts.unanswered / familyQuestions.length) * 100; html += `<div class="bg-slate-400 dark:bg-slate-900 h-full" style="width: ${percentage}%" title="Unanswered: ${counts.unanswered} control(s)"></div>`; } html += `</div></div>`;
+      });
+      container.innerHTML = html;
+    }
+
+    function renderHeatMap(questions, answers) {
+      const container = document.getElementById('heatmap-container');
+      const impactLevels = ["Critical", "Major", "Moderate", "Minor"];
+      const likelihoodLevels = ["Remote", "Unlikely", "Possible", "Likely", "Certain"];
+      const heatmapData = {};
+      impactLevels.forEach(i => { heatmapData[i] = {}; likelihoodLevels.forEach(l => heatmapData[i][l] = []); });
+      const gaps = answers.filter(a => a.isGap);
+      gaps.forEach(gap => {
+        const impact = gap.impact || "Not Set";
+        const likelihood = gap.likelihood || "Not Set";
+        const question = questions.find(q => q.id === gap.questionId);
+        if (question && impactLevels.includes(impact) && likelihoodLevels.includes(likelihood)) { heatmapData[impact][likelihood].push(question); }
+      });
+      // Updated risk colors to ensure compatibility with Rose theme (using rose for critical)
+      const riskColors = { 0: 'bg-slate-200 dark:bg-slate-700', 1: 'bg-sky-300 dark:bg-sky-800', 2: 'bg-amber-300 dark:bg-amber-700', 3: 'bg-orange-400 dark:bg-orange-700', 4: 'bg-rose-500 dark:bg-rose-800' };
+      let html = `<table class="min-w-full border-separate table-fixed" style="border-spacing: 4px;"><thead><tr><th class="p-2 w-24"></th>`;
+      likelihoodLevels.forEach(l => html += `<th class="p-2 text-sm font-semibold text-slate-600 dark:text-slate-300 w-20">${l}</th>`);
+      html += `</tr></thead><tbody>`;
+      impactLevels.forEach((impact, i) => {
+        html += `<tr><td class="p-2 text-sm font-semibold text-slate-600 dark:text-slate-300 text-right">${impact}</td>`;
+        likelihoodLevels.forEach((likelihood, j) => {
+          const cellGaps = heatmapData[impact][likelihood];
+          const count = cellGaps.length;
+          let riskLevel = 0; if (count > 0) { if (i < 2 && j > 2) riskLevel = 4; else if (i < 3 && j > 1) riskLevel = 3; else if (i < 4 && j > 0) riskLevel = 2; else riskLevel = 1; }
+          const color = riskColors[riskLevel];
+          const textColor = riskLevel > 2 ? 'text-white' : 'text-slate-800 dark:text-slate-100';
+          html += `<td class="heatmap-cell h-20 rounded-lg cursor-pointer transition-transform duration-200" data-impact="${impact}" data-likelihood="${likelihood}" data-count="${count}">
+        <div class="w-full h-full flex items-center justify-center font-bold rounded-lg ${color} ${textColor}">${count > 0 ? count : '-'}</div>
+           </td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+  </script>
+</body>
+
+</html>

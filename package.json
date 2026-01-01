@@ -1,0 +1,18 @@
+{
+  "name": "grc-tool",
+  "version": "1.0.0",
+  "description": "",
+  "main": "nist800-171r3-questions.js",
+  "scripts": {
+    "build:css": "npx tailwindcss -i ./input.css -o ./styles.css --watch"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.18",
+    "esbuild": "^0.27.2",
+    "tailwindcss": "^4.1.18"
+  }
+}
