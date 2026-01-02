@@ -3,7 +3,6 @@ node_modules/
 
 # Build outputs
 dist/
-styles.css
 
 # IDE/Editor
 .vscode/
@@ -16,4 +15,3 @@ Thumbs.db
 # Dev/Testing
 dummy_csf2.json
 generate_dummy.py
-nistcontrols.json
